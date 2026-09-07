@@ -1,0 +1,301 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tienda Demo — Backend REST API</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f3f4f6; color: #111827; }
+  header { background: #111827; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 700; }
+  header .sub { font-size: 12px; color: #9ca3af; }
+  .spacer { flex: 1; }
+  .btn { border: 0; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-dark { background: #1f2937; color: #fff; }
+  .btn-green { background: #059669; color: #fff; }
+  .btn-red { background: #dc2626; color: #fff; }
+  .btn-gray { background: #e5e7eb; color: #111827; }
+  .btn-outline { background: transparent; color: #111827; border: 1px solid #d1d5db; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 16px; }
+  .card h2 { font-size: 15px; margin-bottom: 12px; }
+  input, select { border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+  input:focus, select:focus { outline: 2px solid #6366f1; border-color: transparent; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .product { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .product .name { font-weight: 700; font-size: 14px; }
+  .product .desc { font-size: 12px; color: #6b7280; flex: 1; }
+  .product .price { font-size: 15px; font-weight: 800; color: #059669; }
+  .product .stock { font-size: 11px; color: #6b7280; }
+  .qty { width: 64px; }
+  .guest-note { font-size: 12px; color: #9ca3af; }
+  .order { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .order .head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .order .items { font-size: 12px; color: #4b5563; }
+  .badge { border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+  .badge-PENDING { background: #fef3c7; color: #92400e; }
+  .badge-CANCELLED { background: #fee2e2; color: #991b1b; }
+  .empty { color: #6b7280; font-size: 13px; text-align: center; padding: 20px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; border-radius: 8px; padding: 10px 16px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 10; }
+  .toast.show { opacity: 1; }
+  .hidden { display: none !important; }
+  #authPanel { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 16px; margin-bottom: 18px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; }
+  @media (max-width: 700px) { .form { grid-template-columns: 1fr; } }
+  .cart-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
+  .cart-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb; }
+  .tag { font-size: 11px; background: #eef2ff; color: #4338ca; border-radius: 6px; padding: 2px 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tienda Demo</h1>
+  <span class="sub">Página de ejemplo que consume esta API</span>
+  <span id="roleTag" class="tag hidden"></span>
+  <div class="spacer"></div>
+  <span id="userLabel" class="guest-note">No hay sesión iniciada</span>
+  <button id="logoutBtn" class="btn btn-gray hidden">Cerrar sesión</button>
+</header>
+
+<div id="authPanel">
+  <div class="tabs">
+    <button id="tabLogin" class="btn btn-dark">Iniciar sesión</button>
+    <button id="tabRegister" class="btn btn-outline">Registrarse</button>
+  </div>
+  <form id="loginForm" class="form">
+    <input id="loginEmail" type="email" placeholder="email" value="user@example.com" required>
+    <input id="loginPass" type="password" placeholder="contraseña" value="user123" required>
+    <div></div>
+    <button class="btn btn-green" type="submit">Entrar</button>
+  </form>
+  <form id="registerForm" class="form hidden">
+    <input id="regName" type="text" placeholder="nombre" required>
+    <input id="regEmail" type="email" placeholder="email" required>
+    <input id="regPass" type="password" placeholder="contraseña (min. 8)" minlength="8" required>
+    <button class="btn btn-green" type="submit">Crear cuenta</button>
+  </form>
+  <div class="guest-note" style="margin-top:10px">
+    Cuentas creadas por el seed: <b>admin@example.com / admin123</b> (admin) y <b>user@example.com / user123</b>.
+    El usuario normal solo ve sus pedidos, el admin ve todos.
+  </div>
+</div>
+
+<main>
+  <section>
+    <div class="card" style="margin-bottom:18px">
+      <h2>Productos</h2>
+      <div class="row" style="margin-bottom:14px">
+        <input id="search" type="search" placeholder="Buscar por nombre..." style="flex:1; min-width:180px">
+        <select id="sortSel">
+          <option value="createdAt">Más nuevos</option>
+          <option value="price">Precio</option>
+          <option value="name">Nombre</option>
+        </select>
+        <button id="searchBtn" class="btn btn-dark">Buscar</button>
+      </div>
+      <div id="productGrid" class="grid"><div class="empty">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Mis pedidos</h2>
+      <div id="ordersList"><div class="empty">Inicia sesión para ver tus pedidos.</div></div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h2>Carrito</h2>
+      <div id="cartItems"><div class="empty">El carrito está vacío.</div></div>
+      <div class="cart-total hidden" id="cartTotalWrap">
+        <span>Total estimado</span>
+        <span id="cartTotal">$0.00</span>
+      </div>
+      <button id="orderBtn" class="btn btn-green hidden" style="width:100%; margin-top:12px">Hacer pedido</button>
+      <p class="guest-note" style="margin-top:10px">El total real lo calcula el servidor al hacer el pedido y baja el stock automáticamente.</p>
+    </div>
+  </aside>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let token = null;
+let user = null;
+let products = [];
+let cart = new Map();
+
+function toast(msg, ms = 3000) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(path, { ...opts, headers });
+  let data = null;
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error((data && data.error) || ('Error ' + res.status));
+  return data;
+}
+
+function money(n) { return '$' + Number(n).toFixed(2); }
+
+function renderAuth() {
+  const logged = !!user;
+  $('authPanel').classList.toggle('hidden', logged);
+  $('logoutBtn').classList.toggle('hidden', !logged);
+  $('userLabel').textContent = logged ? user.name + ' (' + user.email + ')' : 'No hay sesión iniciada';
+  $('roleTag').classList.toggle('hidden', !logged);
+  if (logged) $('roleTag').textContent = user.role;
+  loadOrders();
+}
+
+function renderProducts() {
+  const grid = $('productGrid');
+  if (!products.length) { grid.innerHTML = '<div class="empty">Sin resultados.</div>'; return; }
+  grid.innerHTML = products.map((p) => {
+    const inCart = cart.get(p.id) || 0;
+    return '<div class="product">' +
+      '<div class="name">' + esc(p.name) + '</div>' +
+      '<div class="desc">' + esc(p.description || '') + '</div>' +
+      '<div class="row">' +
+        '<span class="price">' + money(p.price) + '</span>' +
+        '<span class="stock">' + p.stock + ' en stock</span>' +
+      '</div>' +
+      '<div class="row">' +
+        '<input class="qty" type="number" min="1" max="' + p.stock + '" value="' + (inCart || 1) + '">' +
+        '<button class="btn btn-gray add" data-id="' + p.id + '">Agregar</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  grid.querySelectorAll('.add').forEach((b) => {
+    b.addEventListener('click', () => {
+      const qty = parseInt(b.parentElement.querySelector('.qty').value, 10) || 1;
+      const p = productById(b.dataset.id);
+      addToCart(b.dataset.id, Math.min(qty, p.stock));
+    });
+  });
+}
+
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function productById(id) { return products.find((p) => p.id === id); }
+
+function addToCart(id, qty) { cart.set(id, qty); renderCart(); }
+
+function renderCart() {
+  const wrap = $('cartItems');
+  if (!cart.size) {
+    wrap.innerHTML = '<div class="empty">El carrito está vacío.</div>';
+    $('cartTotalWrap').classList.add('hidden');
+    $('orderBtn').classList.add('hidden');
+    return;
+  }
+  let total = 0;
+  wrap.innerHTML = '';
+  cart.forEach((qty, id) => {
+    const p = productById(id);
+    if (!p) return;
+    total += Number(p.price) * qty;
+    const div = document.createElement('div');
+    div.className = 'cart-item';
+    div.innerHTML = '<span>' + esc(p.name) + ' x ' + qty + '</span>' +
+      '<span class="row"><b>' + money(Number(p.price) * qty) + '</b>' +
+      '<button class="btn btn-red" style="padding:2px 8px;font-size:11px" data-id="' + id + '">x</button></span>';
+    div.querySelector('button').addEventListener('click', () => { cart.delete(id); renderCart(); });
+    wrap.appendChild(div);
+  });
+  $('cartTotal').textContent = money(total);
+  $('cartTotalWrap').classList.remove('hidden');
+  $('orderBtn').classList.remove('hidden');
+}
+
+async function loadProducts() {
+  try {
+    const q = $('search').value.trim();
+    const sort = $('sortSel').value;
+    const res = await api('/products?q=' + encodeURIComponent(q) + '&sort=' + sort + '&order=asc&limit=50');
+    products = res.items;
+    renderProducts();
+  } catch (e) { toast(e.message); }
+}
+
+async function loadOrders() {
+  const list = $('ordersList');
+  if (!user) { list.innerHTML = '<div class="empty">Inicia sesión para ver tus pedidos.</div>'; return; }
+  try {
+    const res = await api('/orders?limit=50');
+    if (!res.items.length) { list.innerHTML = '<div class="empty">Todavía no tenés pedidos.</div>'; return; }
+    list.innerHTML = '';
+    res.items.forEach((o) => {
+      const div = document.createElement('div');
+      div.className = 'order';
+      const items = o.items.map((i) => esc(i.product.name) + ' x ' + i.quantity).join(', ');
+      div.innerHTML =
+        '<div class="head"><span>Pedido <b>' + o.id.slice(0, 8) + '...</b></span><span class="badge ' + o.status + '">' + o.status + '</span></div>' +
+        '<div class="items">' + items + '</div>' +
+        '<div class="head" style="margin-top:6px"><span>Total</span><b>' + money(o.total) + '</b></div>';
+      if (o.status === 'PENDING') {
+        const b = document.createElement('button');
+        b.className = 'btn btn-red'; b.style.cssText = 'margin-top:8px;padding:5px 10px;font-size:12px';
+        b.textContent = 'Cancelar pedido';
+        b.addEventListener('click', async () => {
+          try { await api('/orders/' + o.id + '/cancel', { method: 'PATCH' }); toast('Pedido cancelado, stock devuelto'); loadOrders(); }
+          catch (e) { toast(e.message); }
+        });
+        div.appendChild(b);
+      }
+      list.appendChild(div);
+    });
+  } catch (e) { if (e.message !== 'Authentication required' && e.message !== 'Admin access required') toast(e.message); }
+}
+
+$('tabLogin').addEventListener('click', () => { $('loginForm').classList.remove('hidden'); $('registerForm').classList.add('hidden'); $('tabLogin').className = 'btn btn-dark'; $('tabRegister').className = 'btn btn-outline'; });
+$('tabRegister').addEventListener('click', () => { $('registerForm').classList.remove('hidden'); $('loginForm').classList.add('hidden'); $('tabRegister').className = 'btn btn-dark'; $('tabLogin').className = 'btn btn-outline'; });
+
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const res = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: $('loginEmail').value, password: $('loginPass').value }) });
+    token = res.token; user = res.user;
+    renderAuth(); loadProducts();
+    toast('Sesión iniciada como ' + user.name);
+  } catch (err) { toast(err.message); }
+});
+
+$('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/auth/register', { method: 'POST', body: JSON.stringify({ name: $('regName').value, email: $('regEmail').value, password: $('regPass').value }) });
+    toast('Cuenta creada. Ahora inicia sesión.');
+    $('regName').value = ''; $('regPass').value = '';
+  } catch (err) { toast(err.message); }
+});
+
+$('logoutBtn').addEventListener('click', () => { token = null; user = null; cart.clear(); renderAuth(); renderCart(); loadProducts(); toast('Sesión cerrada'); });
+$('searchBtn').addEventListener('click', loadProducts);
+$('search').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadProducts(); });
+$('sortSel').addEventListener('change', loadProducts);
+
+$('orderBtn').addEventListener('click', async () => {
+  const items = [...cart.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+  try {
+    const order = await api('/orders', { method: 'POST', body: JSON.stringify({ items }) });
+    cart.clear(); renderCart(); loadOrders(); loadProducts();
+    toast('Pedido creado, total: ' + money(order.total));
+  } catch (e) { toast(e.message); }
+});
+
+loadProducts();
+</script>
+</body>
+</html>
