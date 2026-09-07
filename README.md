@@ -44,5 +44,3 @@ El seed crea dos cuentas, solo para uso en desarrollo local:
 
 - `manolo@example.com` / `admin123` (admin)
 - `pepeito@example.com` / `cliente123` (cliente)
-
-No usar estas credenciales en producción.
