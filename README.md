@@ -2,7 +2,7 @@
 
 API REST de una tienda con usuarios, productos y pedidos. Hecha con Node.js, TypeScript, Express y PostgreSQL.
 
-Incluye autenticación con JWT, validación con Zod, rate limiting y un set de tests de integración. Sumé también una página de ejemplo en `public/` para poder probar la API desde el navegador.
+Incluye autenticación con JWT, validación con Zod, rate limiting y un set de tests de integración. Trae dos cosas para probarla sin Postman: una página de ejemplo en `public/` y la documentación interactiva con Swagger.
 
 ## Stack
 
@@ -10,6 +10,7 @@ Incluye autenticación con JWT, validación con Zod, rate limiting y un set de t
 - Express
 - PostgreSQL + Prisma
 - JWT (bcrypt para las contraseñas) + Zod
+- Swagger UI para documentar la API
 - Vitest + Supertest
 
 ## Requisitos
@@ -28,7 +29,10 @@ npm run db:seed
 npm run dev
 ```
 
-Con eso la API queda en `http://localhost:3000`. Si abrís esa URL en el navegador ves la página de ejemplo: sirve para login, armar carrito y hacer pedidos sin Postman.
+Con eso la API queda en `http://localhost:3000`. En el navegador:
+
+- `http://localhost:3000/` → página de ejemplo para probar login, carrito y pedidos.
+- `http://localhost:3000/docs` → documentación interactiva de la API (Swagger UI). También podés bajar el spec en `http://localhost:3000/openapi.json`.
 
 El seed crea dos cuentas:
 
@@ -44,9 +48,25 @@ El `.env.example` tiene todas con sus valores de ejemplo. Las importantes:
 - `JWT_SECRET`: clave para firmar los tokens. Cambiarla en producción.
 - `PORT` (3000), `JWT_EXPIRES_IN` (7d) y los límites de rate limiting están con valores sanos por defecto.
 
+## Arquitectura
+
+Una petición entra por `app.ts` (middlewares globales: helmet, cors, json, rate limit, estáticos) y de ahí a las rutas. Las rutas validan el body y los params con Zod y pasan la petición al controlador. El controlador llama al service, que hace la lógica de negocio contra Prisma/PostgreSQL y responde.
+
+```
+Request → app.ts → routes → middlewares (auth/admin/validate) → controllers → services → Prisma → PostgreSQL
+```
+
+Lo más relevante de la lógica de negocio:
+
+- **Auth**: bcrypt con 10 rondas para las contraseñas; JWT de 7 días. El `passwordHash` nunca sale en las respuestas.
+- **Productos**: la lectura es pública; escribir (crear/editar/borrar) es solo admin. Listado con búsqueda, precio mínimo/máximo, orden y paginación.
+- **Pedidos**: al crear, el servidor valida existencias, calcula el total con los precios actuales y descuenta stock, todo en una transacción. Cancelar devuelve el stock. Un usuario normal solo ve/cancela sus propios pedidos; el admin ve todos.
+- **Usuarios**: cada usuario accede a su propio perfil; el admin accede a todos.
+- **Errores**: todos con el mismo formato `{ "error": "mensaje" }` para que el cliente los maneje parejo.
+
 ## Endpoints
 
-La mayoría de las rutas requieren el header `Authorization: Bearer <token>`.
+La mayoría de las rutas requieren el header `Authorization: Bearer <token>`. La lista completa, con parámetros y ejemplos, está en `http://localhost:3000/docs`.
 
 ### Auth
 
@@ -116,12 +136,28 @@ Usa la base de `TEST_DATABASE_URL`: aplica las migraciones y limpia las tablas e
 | `npm run db:seed` | Cargar datos iniciales |
 | `npm run db:studio` | Abrir Prisma Studio |
 
+## Docker
+
+Para levantar la base y la API juntas:
+
+```bash
+docker compose up --build
+```
+
+El contenedor de la API aplica las migraciones al arrancar. La API queda en `http://localhost:3000` y el Postgres en el puerto `5432`. Si querés correr la imagen sola:
+
+```bash
+docker build -t backend-rest-api .
+docker run -p 3000:3000 -e DATABASE_URL=postgresql://postgres:postgres@tu_db/backend_db?schema=public backend-rest-api
+```
+
 ## Estructura
 
 ```
 .
 ├── prisma/           # schema, migraciones y seed
 ├── public/           # página de ejemplo para probar la API
+├── docs/             # spec OpenAPI (swagger)
 ├── src/
 │   ├── controllers/  # responden las peticiones
 │   ├── routes/       # definición de rutas

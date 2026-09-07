@@ -1,8 +1,11 @@
 import 'dotenv/config';
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import productRoutes from './routes/productRoutes';
@@ -12,10 +15,17 @@ import { config } from './lib/config';
 
 const app = express();
 
+const openapiSpec = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'docs', 'openapi.json'), 'utf-8'));
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+app.get('/openapi.json', (_req, res) => {
+  res.json(openapiSpec);
+});
 
 app.use(
   rateLimit({

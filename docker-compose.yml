@@ -17,5 +17,19 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    container_name: backend_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/backend_db?schema=public
+      JWT_SECRET: change_me_in_production
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
 volumes:
   postgres_data:
