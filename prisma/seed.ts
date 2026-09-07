@@ -3,80 +3,96 @@ import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+const products = [
+  {
+    name: 'Teclado mecánico Nova',
+    description: 'Formato 75%, switches rojos y retroiluminación blanca',
+    price: new Prisma.Decimal(89.5),
+    stock: 25,
+  },
+  {
+    name: 'Mouse inalámbrico Pro',
+    description: 'Sensor de alta precisión, doble conexión 2.4 GHz y Bluetooth',
+    price: new Prisma.Decimal(24.99),
+    stock: 50,
+  },
+  {
+    name: 'Hub USB-C 7 en 1',
+    description: 'HDMI 4K, lector de tarjetas SD y tres puertos USB-A',
+    price: new Prisma.Decimal(34.99),
+    stock: 80,
+  },
+  {
+    name: 'Monitor QHD 27" 144Hz',
+    description: 'Panel IPS de 27 pulgadas, ideal para trabajar y jugar',
+    price: new Prisma.Decimal(259.99),
+    stock: 12,
+  },
+  {
+    name: 'Soporte de notebook de aluminio',
+    description: 'Regulable en altura, compatible con notebooks de 13 a 17 pulgadas',
+    price: new Prisma.Decimal(18.75),
+    stock: 100,
+  },
+  {
+    name: 'Webcam Full HD',
+    description: 'Cámara 1080p con micrófono integrado y tapa de privacidad',
+    price: new Prisma.Decimal(49.99),
+    stock: 40,
+  },
+  {
+    name: 'Cargador GaN 65W',
+    description: 'Carga rápida USB-C para notebook, tablet y celular',
+    price: new Prisma.Decimal(39.99),
+    stock: 60,
+  },
+  {
+    name: 'Auriculares ANC',
+    description: 'Cancelación activa de ruido y 30 horas de batería',
+    price: new Prisma.Decimal(79.9),
+    stock: 35,
+  },
+];
+
+async function upsertUser(email: string, data: { name: string; passwordHash: string; role: 'ADMIN' | 'USER' }) {
+  return prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: {
+      email,
+      ...data,
+    },
+  });
+}
+
 async function main() {
-  const passwordHash = await bcrypt.hash('admin123', 10);
-  const userHash = await bcrypt.hash('user123', 10);
+  const adminHash = await bcrypt.hash('admin123', 10);
+  const userHash = await bcrypt.hash('cliente123', 10);
 
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
-      name: 'Admin User',
-      email: 'admin@example.com',
-      passwordHash,
-      role: 'ADMIN',
-    },
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.user.deleteMany();
+
+  const admin = await upsertUser('camila@voltastore.com', {
+    name: 'Camila Ruiz',
+    passwordHash: adminHash,
+    role: 'ADMIN',
   });
 
-  const regularUser = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
-    update: {},
-    create: {
-      name: 'Regular User',
-      email: 'user@example.com',
-      passwordHash: userHash,
-      role: 'USER',
-    },
+  const regularUser = await upsertUser('jorge@voltastore.com', {
+    name: 'Jorge Medina',
+    passwordHash: userHash,
+    role: 'USER',
   });
-
-  const products = [
-    {
-      name: 'Wireless Mouse',
-      description: 'Ergonomic wireless mouse with silent clicks',
-      price: new Prisma.Decimal(24.99),
-      stock: 50,
-    },
-    {
-      name: 'Mechanical Keyboard',
-      description: 'Tenkeyless mechanical keyboard with blue switches',
-      price: new Prisma.Decimal(89.5),
-      stock: 25,
-    },
-    {
-      name: 'USB-C Hub',
-      description: '7-in-1 USB-C hub with HDMI and card reader',
-      price: new Prisma.Decimal(35.0),
-      stock: 80,
-    },
-    {
-      name: '27 Inch Monitor',
-      description: 'QHD IPS monitor with 144Hz refresh rate',
-      price: new Prisma.Decimal(259.99),
-      stock: 12,
-    },
-    {
-      name: 'Laptop Stand',
-      description: 'Aluminum adjustable laptop stand',
-      price: new Prisma.Decimal(18.75),
-      stock: 100,
-    },
-    {
-      name: 'Webcam 1080p',
-      description: 'Full HD webcam with built-in microphone',
-      price: new Prisma.Decimal(49.99),
-      stock: 40,
-    },
-  ];
 
   for (const product of products) {
-    await prisma.product.create({
-      data: product,
-    });
+    await prisma.product.create({ data: product });
   }
 
   console.log('Seed finished');
   console.log(`Admin account: ${admin.email} / admin123`);
-  console.log(`User account: ${regularUser.email} / user123`);
+  console.log(`User account: ${regularUser.email} / cliente123`);
 }
 
 main()

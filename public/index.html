@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tienda Demo - Backend REST API</title>
+<title>Demo Store</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: #f3f4f6; color: #111827; }
@@ -50,12 +50,16 @@
   .cart-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
   .cart-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb; }
   .tag { font-size: 11px; background: #eef2ff; color: #4338ca; border-radius: 6px; padding: 2px 8px; font-weight: 600; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; }
+  .stat b { display: block; font-size: 16px; }
+  .stat span { font-size: 11px; color: #6b7280; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Tienda Demo</h1>
-  <span class="sub">Página de ejemplo que consume esta API</span>
+  <h1>Demo Store</h1>
+  <span class="sub">Tienda de prueba</span>
   <span id="roleTag" class="tag hidden"></span>
   <div class="spacer"></div>
   <span id="userLabel" class="guest-note">No hay sesión iniciada</span>
@@ -68,8 +72,8 @@
     <button id="tabRegister" class="btn btn-outline">Registrarse</button>
   </div>
   <form id="loginForm" class="form">
-    <input id="loginEmail" type="email" placeholder="email" value="user@example.com" required>
-    <input id="loginPass" type="password" placeholder="contraseña" value="user123" required>
+    <input id="loginEmail" type="email" placeholder="email" value="jorge@voltastore.com" required>
+    <input id="loginPass" type="password" placeholder="contraseña" value="cliente123" required>
     <div></div>
     <button class="btn btn-green" type="submit">Entrar</button>
   </form>
@@ -80,8 +84,7 @@
     <button class="btn btn-green" type="submit">Crear cuenta</button>
   </form>
   <div class="guest-note" style="margin-top:10px">
-    Cuentas creadas por el seed: <b>admin@example.com / admin123</b> (admin) y <b>user@example.com / user123</b>.
-    El usuario normal solo ve sus pedidos, el admin ve todos.
+    Usuarios del seed: <b>jorge@voltastore.com</b> (cliente) y <b>camila@voltastore.com</b> (admin).
   </div>
 </div>
 
@@ -103,199 +106,35 @@
 
     <div class="card">
       <h2>Mis pedidos</h2>
-      <div id="ordersList"><div class="empty">Inicia sesión para ver tus pedidos.</div></div>
+      <div id="ordersList"><div class="empty">Iniciá sesión para ver tus pedidos.</div></div>
     </div>
   </section>
 
   <aside>
+    <div class="card hidden" id="statsCard" style="margin-bottom:18px">
+      <h2>Resumen</h2>
+      <div class="stats">
+        <div class="stat"><b id="statRevenue">-</b><span>Ventas</span></div>
+        <div class="stat"><b id="statOrders">-</b><span>Pedidos</span></div>
+        <div class="stat"><b id="statProducts">-</b><span>Productos</span></div>
+        <div class="stat"><b id="statUsers">-</b><span>Usuarios</span></div>
+      </div>
+    </div>
+
     <div class="card">
       <h2>Carrito</h2>
       <div id="cartItems"><div class="empty">El carrito está vacío.</div></div>
       <div class="cart-total hidden" id="cartTotalWrap">
-        <span>Total estimado</span>
+        <span>Total</span>
         <span id="cartTotal">$0.00</span>
       </div>
       <button id="orderBtn" class="btn btn-green hidden" style="width:100%; margin-top:12px">Hacer pedido</button>
-      <p class="guest-note" style="margin-top:10px">El total real lo calcula el servidor al hacer el pedido y baja el stock automáticamente.</p>
     </div>
   </aside>
 </main>
 
 <div id="toast" class="toast"></div>
 
-<script>
-const $ = (id) => document.getElementById(id);
-let token = null;
-let user = null;
-let products = [];
-let cart = new Map();
-
-function toast(msg, ms = 3000) {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._h);
-  t._h = setTimeout(() => t.classList.remove('show'), ms);
-}
-
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const res = await fetch(path, { ...opts, headers });
-  let data = null;
-  try { data = await res.json(); } catch (e) {}
-  if (!res.ok) throw new Error((data && data.error) || ('Error ' + res.status));
-  return data;
-}
-
-function money(n) { return '$' + Number(n).toFixed(2); }
-
-function renderAuth() {
-  const logged = !!user;
-  $('authPanel').classList.toggle('hidden', logged);
-  $('logoutBtn').classList.toggle('hidden', !logged);
-  $('userLabel').textContent = logged ? user.name + ' (' + user.email + ')' : 'No hay sesión iniciada';
-  $('roleTag').classList.toggle('hidden', !logged);
-  if (logged) $('roleTag').textContent = user.role;
-  loadOrders();
-}
-
-function renderProducts() {
-  const grid = $('productGrid');
-  if (!products.length) { grid.innerHTML = '<div class="empty">Sin resultados.</div>'; return; }
-  grid.innerHTML = products.map((p) => {
-    const inCart = cart.get(p.id) || 0;
-    return '<div class="product">' +
-      '<div class="name">' + esc(p.name) + '</div>' +
-      '<div class="desc">' + esc(p.description || '') + '</div>' +
-      '<div class="row">' +
-        '<span class="price">' + money(p.price) + '</span>' +
-        '<span class="stock">' + p.stock + ' en stock</span>' +
-      '</div>' +
-      '<div class="row">' +
-        '<input class="qty" type="number" min="1" max="' + p.stock + '" value="' + (inCart || 1) + '">' +
-        '<button class="btn btn-gray add" data-id="' + p.id + '">Agregar</button>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-  grid.querySelectorAll('.add').forEach((b) => {
-    b.addEventListener('click', () => {
-      const qty = parseInt(b.parentElement.querySelector('.qty').value, 10) || 1;
-      const p = productById(b.dataset.id);
-      addToCart(b.dataset.id, Math.min(qty, p.stock));
-    });
-  });
-}
-
-function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function productById(id) { return products.find((p) => p.id === id); }
-
-function addToCart(id, qty) { cart.set(id, qty); renderCart(); }
-
-function renderCart() {
-  const wrap = $('cartItems');
-  if (!cart.size) {
-    wrap.innerHTML = '<div class="empty">El carrito está vacío.</div>';
-    $('cartTotalWrap').classList.add('hidden');
-    $('orderBtn').classList.add('hidden');
-    return;
-  }
-  let total = 0;
-  wrap.innerHTML = '';
-  cart.forEach((qty, id) => {
-    const p = productById(id);
-    if (!p) return;
-    total += Number(p.price) * qty;
-    const div = document.createElement('div');
-    div.className = 'cart-item';
-    div.innerHTML = '<span>' + esc(p.name) + ' x ' + qty + '</span>' +
-      '<span class="row"><b>' + money(Number(p.price) * qty) + '</b>' +
-      '<button class="btn btn-red" style="padding:2px 8px;font-size:11px" data-id="' + id + '">x</button></span>';
-    div.querySelector('button').addEventListener('click', () => { cart.delete(id); renderCart(); });
-    wrap.appendChild(div);
-  });
-  $('cartTotal').textContent = money(total);
-  $('cartTotalWrap').classList.remove('hidden');
-  $('orderBtn').classList.remove('hidden');
-}
-
-async function loadProducts() {
-  try {
-    const q = $('search').value.trim();
-    const sort = $('sortSel').value;
-    const res = await api('/products?q=' + encodeURIComponent(q) + '&sort=' + sort + '&order=asc&limit=50');
-    products = res.items;
-    renderProducts();
-  } catch (e) { toast(e.message); }
-}
-
-async function loadOrders() {
-  const list = $('ordersList');
-  if (!user) { list.innerHTML = '<div class="empty">Inicia sesión para ver tus pedidos.</div>'; return; }
-  try {
-    const res = await api('/orders?limit=50');
-    if (!res.items.length) { list.innerHTML = '<div class="empty">Todavía no tenés pedidos.</div>'; return; }
-    list.innerHTML = '';
-    res.items.forEach((o) => {
-      const div = document.createElement('div');
-      div.className = 'order';
-      const items = o.items.map((i) => esc(i.product.name) + ' x ' + i.quantity).join(', ');
-      div.innerHTML =
-        '<div class="head"><span>Pedido <b>' + o.id.slice(0, 8) + '...</b></span><span class="badge ' + o.status + '">' + o.status + '</span></div>' +
-        '<div class="items">' + items + '</div>' +
-        '<div class="head" style="margin-top:6px"><span>Total</span><b>' + money(o.total) + '</b></div>';
-      if (o.status === 'PENDING') {
-        const b = document.createElement('button');
-        b.className = 'btn btn-red'; b.style.cssText = 'margin-top:8px;padding:5px 10px;font-size:12px';
-        b.textContent = 'Cancelar pedido';
-        b.addEventListener('click', async () => {
-          try { await api('/orders/' + o.id + '/cancel', { method: 'PATCH' }); toast('Pedido cancelado, stock devuelto'); loadOrders(); }
-          catch (e) { toast(e.message); }
-        });
-        div.appendChild(b);
-      }
-      list.appendChild(div);
-    });
-  } catch (e) { if (e.message !== 'Authentication required' && e.message !== 'Admin access required') toast(e.message); }
-}
-
-$('tabLogin').addEventListener('click', () => { $('loginForm').classList.remove('hidden'); $('registerForm').classList.add('hidden'); $('tabLogin').className = 'btn btn-dark'; $('tabRegister').className = 'btn btn-outline'; });
-$('tabRegister').addEventListener('click', () => { $('registerForm').classList.remove('hidden'); $('loginForm').classList.add('hidden'); $('tabRegister').className = 'btn btn-dark'; $('tabLogin').className = 'btn btn-outline'; });
-
-$('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    const res = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: $('loginEmail').value, password: $('loginPass').value }) });
-    token = res.token; user = res.user;
-    renderAuth(); loadProducts();
-    toast('Sesión iniciada como ' + user.name);
-  } catch (err) { toast(err.message); }
-});
-
-$('registerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api('/auth/register', { method: 'POST', body: JSON.stringify({ name: $('regName').value, email: $('regEmail').value, password: $('regPass').value }) });
-    toast('Cuenta creada. Ahora inicia sesión.');
-    $('regName').value = ''; $('regPass').value = '';
-  } catch (err) { toast(err.message); }
-});
-
-$('logoutBtn').addEventListener('click', () => { token = null; user = null; cart.clear(); renderAuth(); renderCart(); loadProducts(); toast('Sesión cerrada'); });
-$('searchBtn').addEventListener('click', loadProducts);
-$('search').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadProducts(); });
-$('sortSel').addEventListener('change', loadProducts);
-
-$('orderBtn').addEventListener('click', async () => {
-  const items = [...cart.entries()].map(([productId, quantity]) => ({ productId, quantity }));
-  try {
-    const order = await api('/orders', { method: 'POST', body: JSON.stringify({ items }) });
-    cart.clear(); renderCart(); loadOrders(); loadProducts();
-    toast('Pedido creado, total: ' + money(order.total));
-  } catch (e) { toast(e.message); }
-});
-
-loadProducts();
-</script>
+<script src="script.js" defer></script>
 </body>
 </html>

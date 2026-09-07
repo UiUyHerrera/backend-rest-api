@@ -370,6 +370,25 @@
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
+    },
+    "/stats": {
+      "get": {
+        "tags": ["stats"],
+        "summary": "Resumen de la tienda (solo admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Totales y ventas pendientes",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Stats" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
     }
   },
   "components": {
@@ -574,6 +593,16 @@
           "total": { "type": "integer" },
           "page": { "type": "integer" },
           "limit": { "type": "integer" }
+        }
+      },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "users": { "type": "integer", "example": 2 },
+          "products": { "type": "integer", "example": 8 },
+          "orders": { "type": "integer", "example": 12 },
+          "pendingOrders": { "type": "integer", "example": 5 },
+          "revenue": { "type": "string", "example": "1259.45" }
         }
       }
     }

@@ -10,7 +10,13 @@ const router = Router();
 
 router.get('/', authRequired, adminRequired, asyncHandler(userController.listUsers));
 router.get('/:id', authRequired, validate(userIdSchema, 'params'), asyncHandler(userController.getUser));
-router.patch('/:id', authRequired, validate(userIdSchema, 'params'), validate(updateUserSchema), asyncHandler(userController.updateUser));
+router.patch(
+  '/:id',
+  authRequired,
+  validate(userIdSchema, 'params'),
+  validate(updateUserSchema),
+  asyncHandler(userController.updateUser)
+);
 router.delete('/:id', authRequired, validate(userIdSchema, 'params'), asyncHandler(userController.deleteUser));
 
 export default router;
