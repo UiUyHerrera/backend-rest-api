@@ -4,54 +4,14 @@ import bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 const products = [
-  {
-    name: 'Teclado mecánico Nova',
-    description: 'Formato 75%, switches rojos y retroiluminación blanca',
-    price: new Prisma.Decimal(89.5),
-    stock: 25,
-  },
-  {
-    name: 'Mouse inalámbrico Pro',
-    description: 'Sensor de alta precisión, doble conexión 2.4 GHz y Bluetooth',
-    price: new Prisma.Decimal(24.99),
-    stock: 50,
-  },
-  {
-    name: 'Hub USB-C 7 en 1',
-    description: 'HDMI 4K, lector de tarjetas SD y tres puertos USB-A',
-    price: new Prisma.Decimal(34.99),
-    stock: 80,
-  },
-  {
-    name: 'Monitor QHD 27" 144Hz',
-    description: 'Panel IPS de 27 pulgadas, ideal para trabajar y jugar',
-    price: new Prisma.Decimal(259.99),
-    stock: 12,
-  },
-  {
-    name: 'Soporte de notebook de aluminio',
-    description: 'Regulable en altura, compatible con notebooks de 13 a 17 pulgadas',
-    price: new Prisma.Decimal(18.75),
-    stock: 100,
-  },
-  {
-    name: 'Webcam Full HD',
-    description: 'Cámara 1080p con micrófono integrado y tapa de privacidad',
-    price: new Prisma.Decimal(49.99),
-    stock: 40,
-  },
-  {
-    name: 'Cargador GaN 65W',
-    description: 'Carga rápida USB-C para notebook, tablet y celular',
-    price: new Prisma.Decimal(39.99),
-    stock: 60,
-  },
-  {
-    name: 'Auriculares ANC',
-    description: 'Cancelación activa de ruido y 30 horas de batería',
-    price: new Prisma.Decimal(79.9),
-    stock: 35,
-  },
+  { name: 'Teclado', description: 'Teclado mecánico', price: new Prisma.Decimal(59.9), stock: 25 },
+  { name: 'Mouse', description: 'Mouse inalámbrico', price: new Prisma.Decimal(19.9), stock: 50 },
+  { name: 'Notebook', description: 'Notebook 15 pulgadas', price: new Prisma.Decimal(499.99), stock: 10 },
+  { name: 'Monitor', description: 'Monitor 27 pulgadas', price: new Prisma.Decimal(179.99), stock: 12 },
+  { name: 'Televisor', description: 'Televisor 4K 50 pulgadas', price: new Prisma.Decimal(329.99), stock: 8 },
+  { name: 'Webcam', description: 'Webcam con micrófono', price: new Prisma.Decimal(29.99), stock: 40 },
+  { name: 'Cargador', description: 'Cargador USB-C', price: new Prisma.Decimal(15.99), stock: 60 },
+  { name: 'Auriculares', description: 'Auriculares con micrófono', price: new Prisma.Decimal(25.99), stock: 35 },
 ];
 
 async function upsertUser(email: string, data: { name: string; passwordHash: string; role: 'ADMIN' | 'USER' }) {
@@ -74,13 +34,13 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.user.deleteMany();
 
-  const admin = await upsertUser('camila@voltastore.com', {
+  const admin = await upsertUser('camila@shop.com', {
     name: 'Camila Ruiz',
     passwordHash: adminHash,
     role: 'ADMIN',
   });
 
-  const regularUser = await upsertUser('jorge@voltastore.com', {
+  const regularUser = await upsertUser('jorge@shop.com', {
     name: 'Jorge Medina',
     passwordHash: userHash,
     role: 'USER',

@@ -42,7 +42,7 @@ npm run dev
 
 El seed crea dos cuentas, solo para uso en desarrollo local:
 
-- `camila@voltastore.com` / `admin123` (admin)
-- `jorge@voltastore.com` / `cliente123` (cliente)
+- `camila@shop.com` / `admin123` (admin)
+- `jorge@shop.com` / `cliente123` (cliente)
 
 No usar estas credenciales en producción.
