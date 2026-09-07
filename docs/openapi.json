@@ -374,7 +374,7 @@
     "/stats": {
       "get": {
         "tags": ["stats"],
-        "summary": "Resumen de la tienda (solo admin)",
+        "summary": "Totales de la tienda (solo admin)",
         "security": [{ "bearerAuth": [] }],
         "responses": {
           "200": {
@@ -601,8 +601,7 @@
           "users": { "type": "integer", "example": 2 },
           "products": { "type": "integer", "example": 8 },
           "orders": { "type": "integer", "example": 12 },
-          "pendingOrders": { "type": "integer", "example": 5 },
-          "revenue": { "type": "string", "example": "1259.45" }
+          "pendingOrders": { "type": "integer", "example": 5 }
         }
       }
     }

@@ -26,9 +26,9 @@ function money(n) { return '$' + Number(n).toFixed(2); }
 
 function renderAuth() {
   const logged = !!user;
-  $('authPanel').classList.toggle('hidden', logged);
+  $('loginBox').classList.toggle('hidden', logged);
   $('logoutBtn').classList.toggle('hidden', !logged);
-  $('userLabel').textContent = logged ? user.name + ' (' + user.email + ')' : 'No hay sesión iniciada';
+  $('userLabel').textContent = logged ? user.name + ' (' + user.email + ')' : '';
   $('roleTag').classList.toggle('hidden', !logged);
   if (logged) $('roleTag').textContent = user.role;
   loadOrders();
@@ -97,8 +97,7 @@ function renderCart() {
 async function loadProducts() {
   try {
     const q = $('search').value.trim();
-    const sort = $('sortSel').value;
-    const res = await api('/products?q=' + encodeURIComponent(q) + '&sort=' + sort + '&order=asc&limit=50');
+    const res = await api('/products?q=' + encodeURIComponent(q) + '&sort=createdAt&order=asc&limit=50');
     products = res.items;
     renderProducts();
   } catch (e) { toast(e.message); }
@@ -109,8 +108,8 @@ async function loadStats() {
   if (!user || user.role !== 'ADMIN') { card.classList.add('hidden'); return; }
   try {
     const s = await api('/stats');
-    $('statRevenue').textContent = money(s.revenue);
     $('statOrders').textContent = s.orders;
+    $('statPending').textContent = s.pendingOrders;
     $('statProducts').textContent = s.products;
     $('statUsers').textContent = s.users;
     card.classList.remove('hidden');
@@ -147,11 +146,7 @@ async function loadOrders() {
   } catch (e) { if (e.message !== 'Authentication required' && e.message !== 'Admin access required') toast(e.message); }
 }
 
-$('tabLogin').addEventListener('click', () => { $('loginForm').classList.remove('hidden'); $('registerForm').classList.add('hidden'); $('tabLogin').className = 'btn btn-dark'; $('tabRegister').className = 'btn btn-outline'; });
-$('tabRegister').addEventListener('click', () => { $('registerForm').classList.remove('hidden'); $('loginForm').classList.add('hidden'); $('tabRegister').className = 'btn btn-dark'; $('tabLogin').className = 'btn btn-outline'; });
-
-$('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+$('loginBtn').addEventListener('click', async () => {
   try {
     const res = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email: $('loginEmail').value, password: $('loginPass').value }) });
     token = res.token; user = res.user;
@@ -160,19 +155,9 @@ $('loginForm').addEventListener('submit', async (e) => {
   } catch (err) { toast(err.message); }
 });
 
-$('registerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api('/auth/register', { method: 'POST', body: JSON.stringify({ name: $('regName').value, email: $('regEmail').value, password: $('regPass').value }) });
-    toast('Cuenta creada. Ahora inicia sesión.');
-    $('regName').value = ''; $('regPass').value = '';
-  } catch (err) { toast(err.message); }
-});
-
 $('logoutBtn').addEventListener('click', () => { token = null; user = null; cart.clear(); renderAuth(); renderCart(); loadProducts(); toast('Sesión cerrada'); });
 $('searchBtn').addEventListener('click', loadProducts);
 $('search').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadProducts(); });
-$('sortSel').addEventListener('change', loadProducts);
 
 $('orderBtn').addEventListener('click', async () => {
   const items = [...cart.entries()].map(([productId, quantity]) => ({ productId, quantity }));

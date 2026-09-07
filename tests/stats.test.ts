@@ -32,6 +32,5 @@ describe('stats', () => {
     expect(res.body.products).toBeGreaterThanOrEqual(1);
     expect(res.body.orders).toBeGreaterThanOrEqual(1);
     expect(res.body.pendingOrders).toBeGreaterThanOrEqual(1);
-    expect(typeof res.body.revenue).toBe('string');
   });
 });

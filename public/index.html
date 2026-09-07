@@ -3,102 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Demo Store</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui, sans-serif; background: #f3f4f6; color: #111827; }
-  header { background: #111827; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  header h1 { font-size: 18px; font-weight: 700; }
-  header .sub { font-size: 12px; color: #9ca3af; }
-  .spacer { flex: 1; }
-  .btn { border: 0; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
-  .btn:hover { opacity: .85; }
-  .btn-dark { background: #1f2937; color: #fff; }
-  .btn-green { background: #059669; color: #fff; }
-  .btn-red { background: #dc2626; color: #fff; }
-  .btn-gray { background: #e5e7eb; color: #111827; }
-  .btn-outline { background: transparent; color: #111827; border: 1px solid #d1d5db; }
-  main { max-width: 1100px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 16px; }
-  .card h2 { font-size: 15px; margin-bottom: 12px; }
-  input, select { border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
-  input:focus, select:focus { outline: 2px solid #6366f1; border-color: transparent; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  .product { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-  .product .name { font-weight: 700; font-size: 14px; }
-  .product .desc { font-size: 12px; color: #6b7280; flex: 1; }
-  .product .price { font-size: 15px; font-weight: 800; color: #059669; }
-  .product .stock { font-size: 11px; color: #6b7280; }
-  .qty { width: 64px; }
-  .guest-note { font-size: 12px; color: #9ca3af; }
-  .order { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
-  .order .head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
-  .order .items { font-size: 12px; color: #4b5563; }
-  .badge { border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
-  .badge-PENDING { background: #fef3c7; color: #92400e; }
-  .badge-CANCELLED { background: #fee2e2; color: #991b1b; }
-  .empty { color: #6b7280; font-size: 13px; text-align: center; padding: 20px; }
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; border-radius: 8px; padding: 10px 16px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 10; }
-  .toast.show { opacity: 1; }
-  .hidden { display: none !important; }
-  #authPanel { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 16px; margin-bottom: 18px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-  .form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; }
-  @media (max-width: 700px) { .form { grid-template-columns: 1fr; } }
-  .cart-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
-  .cart-total { display: flex; justify-content: space-between; font-weight: 800; margin-top: 10px; padding-top: 10px; border-top: 2px solid #e5e7eb; }
-  .tag { font-size: 11px; background: #eef2ff; color: #4338ca; border-radius: 6px; padding: 2px 8px; font-weight: 600; }
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
-  .stat { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; }
-  .stat b { display: block; font-size: 16px; }
-  .stat span { font-size: 11px; color: #6b7280; }
-</style>
+<title>Volta Store</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
-  <h1>Demo Store</h1>
-  <span class="sub">Tienda de prueba</span>
+  <h1>Volta Store</h1>
   <span id="roleTag" class="tag hidden"></span>
   <div class="spacer"></div>
-  <span id="userLabel" class="guest-note">No hay sesión iniciada</span>
+  <span id="userLabel"></span>
   <button id="logoutBtn" class="btn btn-gray hidden">Cerrar sesión</button>
 </header>
-
-<div id="authPanel">
-  <div class="tabs">
-    <button id="tabLogin" class="btn btn-dark">Iniciar sesión</button>
-    <button id="tabRegister" class="btn btn-outline">Registrarse</button>
-  </div>
-  <form id="loginForm" class="form">
-    <input id="loginEmail" type="email" placeholder="email" value="jorge@voltastore.com" required>
-    <input id="loginPass" type="password" placeholder="contraseña" value="cliente123" required>
-    <div></div>
-    <button class="btn btn-green" type="submit">Entrar</button>
-  </form>
-  <form id="registerForm" class="form hidden">
-    <input id="regName" type="text" placeholder="nombre" required>
-    <input id="regEmail" type="email" placeholder="email" required>
-    <input id="regPass" type="password" placeholder="contraseña (mín. 8)" minlength="8" required>
-    <button class="btn btn-green" type="submit">Crear cuenta</button>
-  </form>
-  <div class="guest-note" style="margin-top:10px">
-    Usuarios del seed: <b>jorge@voltastore.com</b> (cliente) y <b>camila@voltastore.com</b> (admin).
-  </div>
-</div>
 
 <main>
   <section>
     <div class="card" style="margin-bottom:18px">
+      <div id="loginBox" class="login">
+        <input id="loginEmail" type="email" placeholder="email" value="jorge@voltastore.com">
+        <input id="loginPass" type="password" placeholder="contraseña" value="cliente123">
+        <button id="loginBtn" class="btn btn-green">Entrar</button>
+      </div>
+
       <h2>Productos</h2>
       <div class="row" style="margin-bottom:14px">
-        <input id="search" type="search" placeholder="Buscar por nombre..." style="flex:1; min-width:180px">
-        <select id="sortSel">
-          <option value="createdAt">Más nuevos</option>
-          <option value="price">Precio</option>
-          <option value="name">Nombre</option>
-        </select>
+        <input id="search" type="search" placeholder="Buscar..." style="flex:1; min-width:180px">
         <button id="searchBtn" class="btn btn-dark">Buscar</button>
       </div>
       <div id="productGrid" class="grid"><div class="empty">Cargando...</div></div>
@@ -114,8 +42,8 @@
     <div class="card hidden" id="statsCard" style="margin-bottom:18px">
       <h2>Resumen</h2>
       <div class="stats">
-        <div class="stat"><b id="statRevenue">-</b><span>Ventas</span></div>
         <div class="stat"><b id="statOrders">-</b><span>Pedidos</span></div>
+        <div class="stat"><b id="statPending">-</b><span>Pendientes</span></div>
         <div class="stat"><b id="statProducts">-</b><span>Productos</span></div>
         <div class="stat"><b id="statUsers">-</b><span>Usuarios</span></div>
       </div>
@@ -128,13 +56,13 @@
         <span>Total</span>
         <span id="cartTotal">$0.00</span>
       </div>
-      <button id="orderBtn" class="btn btn-green hidden" style="width:100%; margin-top:12px">Hacer pedido</button>
+      <button id="orderBtn" class="btn btn-green hidden" style="width:100%; margin-top:12px">Comprar</button>
     </div>
   </aside>
 </main>
 
 <div id="toast" class="toast"></div>
 
-<script src="script.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>

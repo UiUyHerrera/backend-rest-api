@@ -36,3 +36,13 @@ docker compose up -d db
 npm run db:migrate
 npm run db:seed
 npm run dev
+```
+
+## Cuentas de prueba
+
+El seed crea dos cuentas, solo para uso en desarrollo local:
+
+- `camila@voltastore.com` / `admin123` (admin)
+- `jorge@voltastore.com` / `cliente123` (cliente)
+
+No usar estas credenciales en producción.
