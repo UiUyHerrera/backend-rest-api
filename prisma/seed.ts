@@ -34,14 +34,14 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.user.deleteMany();
 
-  const admin = await upsertUser('camila@shop.com', {
-    name: 'Camila Ruiz',
+  const admin = await upsertUser('manolo@example.com', {
+    name: 'Manolo',
     passwordHash: adminHash,
     role: 'ADMIN',
   });
 
-  const regularUser = await upsertUser('jorge@shop.com', {
-    name: 'Jorge Medina',
+  const regularUser = await upsertUser('pepeito@example.com', {
+    name: 'Pepeito',
     passwordHash: userHash,
     role: 'USER',
   });
